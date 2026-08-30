@@ -1,0 +1,43 @@
+name: bizpolicy-daily
+on:
+  schedule:
+    - cron: '20 22 * * *'    # 매일 07:20 KST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - name: Collect news
+        env:
+          NAVER_ID: ${{ secrets.NAVER_ID }}
+          NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
+        run: python collect_biz_news.py
+
+      - name: Build DB
+        run: python build_db.py
+
+      - name: Monthly brief (매월 1일, 전월호)
+        if: ${{ startsWith(github.event.schedule, '20 22') }}
+        run: |
+          if [ "$(date +%d)" = "01" ]; then
+            python monthly_brief.py $(date -d "yesterday" +%Y-%m) --db news.db --out reports || true
+          fi
+
+      - name: Rebuild index
+        run: python make_index.py
+
+      - name: Commit
+        run: |
+          git config user.name  "bizpolicy-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add biz_news.json news.db index.html reports/ || true
+          git commit -m "daily: collect + db + index" || echo "no change"
+          git push

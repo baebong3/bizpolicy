@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""index.html 생성 — 수집 현황 + 리포트 목록 (정적, JS 없음)"""
+import glob, json, os, sqlite3
+HERE = os.path.dirname(os.path.abspath(__file__))
+NAVY, LIME = "#1F3864", "#8DC63F"
+
+meta = {"total": 0, "generated": "-"}
+if os.path.exists(os.path.join(HERE, "biz_news.json")):
+    meta = json.load(open(os.path.join(HERE, "biz_news.json"), encoding="utf-8")).get("meta", meta)
+span = ("-", "-"); by = []
+if os.path.exists(os.path.join(HERE, "news.db")):
+    con = sqlite3.connect(os.path.join(HERE, "news.db"))
+    span = con.execute("SELECT MIN(date), MAX(date) FROM articles").fetchone() or span
+    by = con.execute("""SELECT substr(date,1,7) m, COUNT(*),
+        ROUND(100.0*(SUM(sentiment='긍정')-SUM(sentiment='부정'))/COUNT(*),1)
+        FROM articles GROUP BY m ORDER BY m DESC LIMIT 12""").fetchall()
+
+briefs = sorted(glob.glob(os.path.join(HERE, "reports", "소상공인_정책_여론브리프_*.html")), reverse=True)
+feats = sorted(glob.glob(os.path.join(HERE, "reports", "월간_소상공인정책리포트_*.html")), reverse=True)
+li = lambda fs: "".join(f"<li><a href='reports/{os.path.basename(f)}'>{os.path.basename(f).replace('.html','')}</a></li>" for f in fs) or "<li class='mut'>첫 월이 마감되면 자동 게시됩니다</li>"
+rows = "".join(f"<tr><td>{m}</td><td class='n'>{n:,}</td><td class='n'>{s}</td></tr>" for m, n, s in by) or "<tr><td colspan='3' class='mut'>수집 대기 중</td></tr>"
+
+open(os.path.join(HERE, "index.html"), "w", encoding="utf-8").write(f"""<!DOCTYPE html><html lang='ko'><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'><title>소상공인 정책 레이더</title><style>
+body{{font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;margin:0;background:#F7F8FA;color:#16202C}}
+header{{background:{NAVY};color:#fff;padding:26px 20px}}
+.b{{color:{LIME};font-size:12px;letter-spacing:.15em;font-weight:800}}
+h1{{margin:6px 0 4px;font-size:24px}} .sub{{color:#C9D3E4;font-size:13px}}
+.wrap{{max-width:760px;margin:0 auto;padding:20px}}
+.card{{background:#fff;border:1px solid #E3E7EE;border-radius:10px;padding:16px 18px;margin-bottom:14px}}
+h2{{font-size:15px;color:{NAVY};margin:0 0 10px;border-left:4px solid {LIME};padding-left:9px}}
+table{{width:100%;border-collapse:collapse;font-size:13px}}
+th{{background:{NAVY};color:#fff;padding:6px;font-weight:600}} td{{padding:6px;border-bottom:1px solid #F0F2F5;text-align:center}}
+td.n{{font-variant-numeric:tabular-nums}}
+ul{{margin:0;padding-left:2px}} li{{list-style:none;padding:6px 0;border-bottom:1px dashed #EEE;font-size:14px}}
+a{{color:{NAVY};font-weight:600;text-decoration:none}} a:hover{{text-decoration:underline}}
+.mut{{color:#8A93A0}} footer{{font-size:11px;color:#8A93A0;padding:6px 20px 30px;max-width:760px;margin:0 auto}}
+</style></head><body>
+<header><div class='wrap' style='padding:0'><div class='b'>SOUTHERN POST R&amp;C · BIZPOLICY RADAR</div>
+<h1>소상공인 정책 레이더</h1>
+<div class='sub'>뉴스 자동 수집·논조 관측 — 누적 {meta.get('total',0):,}건 · 관측 {span[0]} ~ {span[1]} · 갱신 {str(meta.get('generated','-'))[:16]}</div></div></header>
+<div class='wrap'>
+<div class='card'><h2>월간 기획 리포트</h2><ul>{li(feats)}</ul></div>
+<div class='card'><h2>월간 여론 브리프 (지수형)</h2><ul>{li(briefs)}</ul></div>
+<div class='card'><h2>월별 수집·순감성지수(NSI)</h2><table><tr><th>월</th><th>수집</th><th>NSI</th></tr>{rows}</table></div>
+</div>
+<footer>순감성지수(NSI)=(긍정−부정)÷전체×100 · 감성은 규칙 기반 자동 분류 · 인용은 기사 제목에 한정 · (주)서던포스트알앤씨</footer>
+</body></html>""")
+print("index.html 생성")
