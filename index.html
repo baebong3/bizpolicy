@@ -1,26 +1,286 @@
-<!DOCTYPE html><html lang='ko'><head><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width,initial-scale=1'><title>소상공인 정책 레이더</title><style>
-body{font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;margin:0;background:#F7F8FA;color:#16202C}
-header{background:#1F3864;color:#fff;padding:26px 20px}
-.b{color:#8DC63F;font-size:12px;letter-spacing:.15em;font-weight:800}
-h1{margin:6px 0 4px;font-size:24px} .sub{color:#C9D3E4;font-size:13px}
-.wrap{max-width:760px;margin:0 auto;padding:20px}
-.card{background:#fff;border:1px solid #E3E7EE;border-radius:10px;padding:16px 18px;margin-bottom:14px}
-h2{font-size:15px;color:#1F3864;margin:0 0 10px;border-left:4px solid #8DC63F;padding-left:9px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#1F3864;color:#fff;padding:6px;font-weight:600} td{padding:6px;border-bottom:1px solid #F0F2F5;text-align:center}
-td.n{font-variant-numeric:tabular-nums}
-ul{margin:0;padding-left:2px} li{list-style:none;padding:6px 0;border-bottom:1px dashed #EEE;font-size:14px}
-a{color:#1F3864;font-weight:600;text-decoration:none} a:hover{text-decoration:underline}
-.mut{color:#8A93A0} footer{font-size:11px;color:#8A93A0;padding:6px 20px 30px;max-width:760px;margin:0 auto}
+<!DOCTYPE html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>소상공인 정책 레이더</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{--navy:#1F3864;--lime:#8DC63F;--mid:#4A6FA5;--red:#C0452B;--ink:#16202C;--mut:#8A93A0;--grid:#F1F3F6;
+--good:#8DC63F;--neu:#D6DBE2;--bad:#C0452B}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#F6F7F9;color:var(--ink);-webkit-text-size-adjust:100%}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px 48px}
+header{background:var(--navy);color:#fff;padding:18px 0 16px}
+.brand{font-size:11.5px;letter-spacing:.15em;color:var(--lime);font-weight:800}
+h1{font-size:23px;margin-top:4px}
+.hsub{margin-top:7px;font-size:12px;color:#C9D3E4;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{background:rgba(255,255,255,.13);border-radius:20px;padding:3px 11px}
+.chip b{color:var(--lime)}
+.nav{display:flex;gap:8px;margin:16px 0 14px;flex-wrap:wrap}
+.nav button{border:1px solid #D8DEE8;background:#fff;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;color:#4A5568;cursor:pointer}
+.nav button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.nav .sep{width:1px;background:#E0E4EA;margin:2px 4px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid #E3E7EE;border-top:3px solid var(--navy);border-radius:10px;padding:11px 14px}
+.kpi.lm{border-top-color:var(--lime)}.kpi.rd{border-top-color:var(--red)}
+.kpi .l{font-size:11px;color:var(--mut);font-weight:600}
+.kpi .v{font-size:23px;font-weight:800;margin:2px 0;color:var(--navy)}
+.kpi .s{font-size:11px;color:var(--mut)}
+.sum{background:#fff;border:1.5px solid var(--navy);border-left:6px solid var(--lime);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;line-height:1.7}
+.sum b{color:var(--navy)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:#fff;border:1px solid #E3E7EE;border-radius:10px;padding:13px 15px}
+.card.full{grid-column:1/-1}
+.eyebrow{font-size:10px;letter-spacing:.12em;color:var(--lime);font-weight:800}
+.ctitle{font-size:14.5px;font-weight:700;color:var(--navy);margin:1px 0 0}
+.csub{font-size:11px;color:var(--mut);margin-bottom:8px}
+.chwrap{position:relative;width:100%}
+.note{font-size:10.5px;color:var(--mut);margin-top:6px;line-height:1.5}
+.note::before{content:'※ '}
+.watch{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
+.watch button{border:1px solid #E8C9C2;background:#FBF1EF;color:var(--red);border-radius:16px;padding:5px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+.watch button i{font-style:normal;font-size:10.5px;margin-left:4px;opacity:.75}
+.watch button.on{background:var(--red);color:#fff}
+.flt{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.flt button{border:1px solid #D8DEE8;background:#fff;border-radius:14px;padding:4px 11px;font-size:12px;color:#4A5568;cursor:pointer}
+.flt button.on{background:var(--mid);border-color:var(--mid);color:#fff}
+.flt input{flex:1;min-width:140px;border:1px solid #D8DEE8;border-radius:8px;padding:5px 10px;font-size:12.5px}
+.news li{list-style:none;padding:8px 2px;border-bottom:1px solid var(--grid);font-size:13px;line-height:1.55;display:flex;gap:8px;align-items:baseline}
+.news .d{color:var(--mut);font-size:11px;white-space:nowrap}
+.badge{font-size:10px;font-weight:800;border-radius:4px;padding:2px 6px;white-space:nowrap}
+.b-pos{background:#EFF7E3;color:#4E7A17}.b-neu{background:#EEF1F5;color:#6B7A8F}.b-neg{background:#F9ECE9;color:var(--red)}
+.tag{font-size:10.5px;color:var(--mid);white-space:nowrap}
+.news a{color:var(--ink);text-decoration:none}
+.news a:hover{color:var(--navy);text-decoration:underline}
+.more{width:100%;margin-top:10px;border:1px solid #D8DEE8;background:#fff;border-radius:8px;padding:8px;font-size:13px;color:var(--navy);font-weight:600;cursor:pointer}
+.rep li{list-style:none;padding:6px 0;border-bottom:1px dashed var(--grid);font-size:13.5px}
+.rep a{color:var(--navy);font-weight:600;text-decoration:none}
+.empty{color:var(--mut);font-size:12.5px;text-align:center;padding:22px 0}
+footer{margin-top:24px;border-top:1px solid #E3E7EE;padding-top:10px;font-size:10.5px;color:var(--mut);line-height:1.7}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}h1{font-size:19px}}
 </style></head><body>
-<header><div class='wrap' style='padding:0'><div class='b'>SOUTHERN POST R&amp;C · BIZPOLICY RADAR</div>
-<h1>소상공인 정책 레이더</h1>
-<div class='sub'>뉴스 자동 수집·논조 관측 — 누적 3,384건 · 관측 2026-07-13 ~ 2026-08-30 · 갱신 2026-08-30T13:11</div></div></header>
-<div class='wrap'>
-<div class='card'><h2>월간 기획 리포트</h2><ul><li class='mut'>첫 월이 마감되면 자동 게시됩니다</li></ul></div>
-<div class='card'><h2>월간 여론 브리프 (지수형)</h2><ul><li class='mut'>첫 월이 마감되면 자동 게시됩니다</li></ul></div>
-<div class='card'><h2>월별 수집·순감성지수(NSI)</h2><table><tr><th>월</th><th>수집</th><th>NSI</th></tr><tr><td>2026-08</td><td class='n'>3,370</td><td class='n'>-10.1</td></tr><tr><td>2026-07</td><td class='n'>14</td><td class='n'>0.0</td></tr></table></div>
+<header><div class="wrap" style="padding-bottom:0">
+  <div class="brand">SOUTHERN POST R&amp;C · BIZPOLICY RADAR</div>
+  <h1>소상공인 정책 레이더</h1>
+  <div class="hsub">
+    <span class="chip">갱신 <b id="upd" class="num">-</b></span>
+    <span class="chip">누적 <b id="tot" class="num">-</b>건</span>
+    <span class="chip">수집원 네이버 뉴스 API · 감성 규칙 기반 자동 분류</span>
+  </div>
+</div></header>
+<div class="wrap">
+
+  <div class="nav" id="periodNav">
+    <button data-p="day" class="on">일간</button>
+    <button data-p="week">주간</button>
+    <button data-p="month">월간</button>
+    <span class="sep"></span>
+    <button data-s="전체" class="on sc">전체</button>
+    <button data-s="중앙" class="sc">중앙</button>
+    <button data-s="지자체" class="sc">지자체</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l" id="k1l">수집</div><div class="v num" id="k1">-</div><div class="s" id="k1s"></div></div>
+    <div class="kpi lm"><div class="l">긍정</div><div class="v num" id="k2">-</div><div class="s" id="k2s"></div></div>
+    <div class="kpi rd"><div class="l">부정</div><div class="v num" id="k3">-</div><div class="s" id="k3s"></div></div>
+    <div class="kpi"><div class="l">순감성지수(NSI)</div><div class="v num" id="k4">-</div><div class="s">(긍정−부정)÷전체×100</div></div>
+    <div class="kpi lm"><div class="l">최다 주제</div><div class="v" id="k5" style="font-size:17px">-</div><div class="s" id="k5s"></div></div>
+  </div>
+
+  <div class="sum" id="sum">데이터를 불러오는 중…</div>
+
+  <div class="grid">
+    <div class="card full"><div class="eyebrow">TREND</div>
+      <div class="ctitle" id="trTitle">감성 추이</div><div class="csub">긍정·중립·부정 누적 — 막대 위 수치는 총 수집</div>
+      <div class="chwrap" style="height:230px"><canvas id="chTrend"></canvas></div>
+    </div>
+    <div class="card"><div class="eyebrow">TOPIC</div>
+      <div class="ctitle">주제별 부정률</div><div class="csub" id="tpSub"></div>
+      <div class="chwrap" style="height:250px"><canvas id="chTopic"></canvas></div>
+    </div>
+    <div class="card"><div class="eyebrow">REGION</div>
+      <div class="ctitle">시·도별 부정률</div><div class="csub">표본 20건 이상 시·도 (부정률 내림차순)</div>
+      <div class="chwrap" style="height:250px"><canvas id="chSido"></canvas></div>
+    </div>
+    <div class="card full"><div class="eyebrow">WATCH</div>
+      <div class="ctitle">쟁점 워치 — 부정 보도 빈출 키워드</div><div class="csub">클릭하면 아래 뉴스 목록이 해당 쟁점으로 필터링됩니다 (인물·정당명 제외)</div>
+      <div class="watch" id="watch"></div>
+    </div>
+    <div class="card full"><div class="eyebrow">NEWS</div>
+      <div class="ctitle">최신 수집 뉴스</div><div class="csub" id="nsSub"></div>
+      <div class="flt">
+        <button data-f="all" class="on">전체</button>
+        <button data-f="긍정">긍정</button>
+        <button data-f="부정">부정</button>
+        <input id="q" placeholder="제목 검색…">
+      </div>
+      <ul class="news" id="list"></ul>
+      <button class="more" id="more">더 보기</button>
+    </div>
+    <div class="card full"><div class="eyebrow">REPORTS</div>
+      <div class="ctitle">월간 리포트</div><div class="csub">매월 1일 전월 브리프 자동 게시 · 기획 리포트는 편집 원고 결합</div>
+      <ul class="rep" id="reps"><li class="empty">첫 월이 마감되면 게시됩니다</li></ul>
+    </div>
+  </div>
+
+  <footer>
+    순감성지수(NSI)=(긍정−부정)÷전체×100 · 감성 라벨은 규칙 기반 자동 분류 결과로 개별 기사 판정에는 오차가 있을 수 있음 ·
+    쟁점 키워드 집계에서 인물·정당명은 제외 · 인용·표시는 기사 제목에 한정 · (주)서던포스트알앤씨
+  </footer>
 </div>
-<footer>순감성지수(NSI)=(긍정−부정)÷전체×100 · 감성은 규칙 기반 자동 분류 · 인용은 기사 제목에 한정 · (주)서던포스트알앤씨</footer>
+
+<script>
+const C={navy:'#1F3864',lime:'#8DC63F',mid:'#4A6FA5',red:'#C0452B',neu:'#D6DBE2',mut:'#8A93A0'};
+const fmt=n=>n.toLocaleString('ko-KR');
+const f1=x=>(Math.round(x*10)/10).toFixed(1);
+const STOP=new Set(('소상공인 자영업 자영업자 소공인 상인 상인회 점포 매장 지원 사업 정책 정부 위해 위한 추진 확대 진행 운영 개최 마련 실시 모집 선정 발표 관련 대상 통해 종합 단독 속보 오늘 기자 뉴스 영상 전국 지역 신청 접수 안내 성료 본격 함께 최대 시작 방법 내용 개시 밝혔다 진행한다 추진한다 됐다 했다 한다 된다 있다').split(' '));
+const PERSON=new Set(('이재명 김문수 한동훈 조국 이준석 오세훈 민주당 국민의힘 개혁신당 더불어민주당 조국혁신당 대통령 시장 도지사 지사 군수 구청장 의원 장관 총리').split(' '));
+let ALL=[],period='day',scope='전체',sent='all',kw='',shown=50;
+let chT=null,chTp=null,chSd=null;
+
+fetch('biz_news.json?'+Date.now())
+ .then(r=>{if(!r.ok)throw 0;return r.json()})
+ .then(d=>{
+  ALL=(d.items||[]).filter(a=>a.date&&a.title);
+  document.getElementById('upd').textContent=(d.meta?.generated||'-').slice(0,16).replace('T',' ');
+  document.getElementById('tot').textContent=fmt(ALL.length);
+  render();
+ },()=>{document.getElementById('sum').textContent='biz_news.json을 불러오지 못했습니다 — 첫 수집(Actions) 실행 후 표시됩니다.'});
+const tryDraw=(fn,id)=>{try{if(typeof Chart==='undefined')throw 0;fn()}catch(e){
+  const c=document.getElementById(id); if(c&&c.parentElement)
+  c.parentElement.innerHTML='<div class="empty">차트 라이브러리 로드 실패 — 새로고침하거나 잠시 후 다시 시도하세요</div>'}};
+
+function inScope(a){return scope==='전체'||a.scope===scope}
+function rangeItems(){
+  if(!ALL.length)return[];
+  const last=ALL.map(a=>a.date).sort().pop();
+  const D=n=>{const t=new Date(last);t.setDate(t.getDate()-n);return t.toISOString().slice(0,10)};
+  const from=period==='day'?last:period==='week'?D(6):last.slice(0,7)+'-01';
+  return ALL.filter(a=>a.date>=from&&inScope(a));
+}
+function agg(items){
+  const g={n:items.length,pos:0,neg:0};
+  items.forEach(a=>{if(a.sentiment==='긍정')g.pos++;else if(a.sentiment==='부정')g.neg++});
+  g.nsi=g.n?100*(g.pos-g.neg)/g.n:0;return g;
+}
+function tokens(t){const out=new Set();(t.match(/[가-힣]{2,}/g)||[]).forEach(w=>{
+  for(const j of ['에서','으로','이라','라는','은','는','이','가','을','를','의','도','로','에','와','과','만'])
+    if(w.length-j.length>=2&&w.endsWith(j)){w=w.slice(0,-j.length);break}
+  if(w.length>=2&&!STOP.has(w)&&!PERSON.has(w))out.add(w)});return out}
+
+function render(){
+  const R=rangeItems(),G=agg(R);
+  const lbl={day:'오늘 수집',week:'최근 7일 수집',month:'이번 달 수집'}[period];
+  document.getElementById('k1l').textContent=lbl+(scope==='전체'?'':' · '+scope);
+  document.getElementById('k1').textContent=fmt(G.n);
+  document.getElementById('k1s').textContent='기준일 '+(ALL.map(a=>a.date).sort().pop()||'-');
+  document.getElementById('k2').textContent=fmt(G.pos);
+  document.getElementById('k2s').textContent='긍정률 '+f1(G.n?100*G.pos/G.n:0)+'%';
+  document.getElementById('k3').textContent=fmt(G.neg);
+  document.getElementById('k3s').textContent='부정률 '+f1(G.n?100*G.neg/G.n:0)+'%';
+  document.getElementById('k4').textContent=f1(G.nsi);
+  const tc={};R.forEach(a=>(a.topics||[]).forEach(t=>tc[t]=(tc[t]||0)+1));
+  const top=Object.entries(tc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('k5').textContent=top?top[0]:'-';
+  document.getElementById('k5s').textContent=top?fmt(top[1])+'건':'';
+  // 요약
+  const neg=R.filter(a=>a.sentiment==='부정');
+  const nt={};neg.forEach(a=>(a.topics||[]).forEach(t=>nt[t]=(nt[t]||0)+1));
+  const hot=Object.entries(nt).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('sum').innerHTML=
+    `◈ ${lbl} <b class="num">${fmt(G.n)}</b>건 — 순감성지수 <b class="num">${f1(G.nsi)}</b>, 부정 <b class="num">${fmt(G.neg)}</b>건(${f1(G.n?100*G.neg/G.n:0)}%). `+
+    (hot?`부정 보도가 가장 몰린 주제는 <b>${hot[0]}</b>(${hot[1]}건)입니다.`:'부정 보도 집중 주제가 없습니다.');
+  tryDraw(drawTrend,'chTrend');tryDraw(()=>drawTopic(R),'chTopic');tryDraw(drawSido,'chSido');
+  drawWatch(R);drawList();drawReports();
+}
+
+function drawTrend(){
+  const src=ALL.filter(inScope);
+  let buckets={};
+  const key=a=>period==='month'?a.date.slice(0,7):a.date;
+  src.forEach(a=>{const k=key(a);(buckets[k]=buckets[k]||{p:0,u:0,g:0});
+    a.sentiment==='긍정'?buckets[k].p++:a.sentiment==='부정'?buckets[k].g++:buckets[k].u++});
+  let keys=Object.keys(buckets).sort();
+  if(period!=='month')keys=keys.slice(-14);
+  document.getElementById('trTitle').textContent={day:'일별 감성 추이 (최근 14일)',week:'일별 감성 추이 (최근 14일)',month:'월별 감성 추이'}[period];
+  const ds=[{label:'긍정',data:keys.map(k=>buckets[k].p),backgroundColor:C.lime},
+            {label:'중립',data:keys.map(k=>buckets[k].u),backgroundColor:C.neu},
+            {label:'부정',data:keys.map(k=>buckets[k].g),backgroundColor:C.red}];
+  if(chT)chT.destroy();
+  chT=new Chart(chTrend,{type:'bar',plugins:[ChartDataLabels],
+   data:{labels:keys.map(k=>k.slice(5)),datasets:ds},
+   options:{maintainAspectRatio:false,responsive:true,
+    scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,font:{size:10.5}}},
+            y:{stacked:true,display:false}},
+    plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11}}},
+     datalabels:{display:c=>c.datasetIndex===2,anchor:'end',align:'end',offset:-2,
+       formatter:(v,c)=>{const i=c.dataIndex,t=ds[0].data[i]+ds[1].data[i]+ds[2].data[i];return fmt(t)},
+       color:C.navy,font:{size:10,weight:'700'}}}}});
+}
+function hbar(el,old,labels,vals,colors,unit){
+  if(old)old.destroy();
+  return new Chart(el,{type:'bar',plugins:[ChartDataLabels],
+   data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:3}]},
+   options:{indexAxis:'y',maintainAspectRatio:false,
+    scales:{x:{display:false,max:Math.max(...vals)*1.25||1},y:{grid:{display:false},ticks:{font:{size:11.5}}}},
+    plugins:{legend:{display:false},
+     datalabels:{anchor:'end',align:'end',formatter:v=>f1(v)+unit,color:'#16202C',font:{size:11,weight:'700'}}}}});
+}
+function drawTopic(R){
+  const st={};R.forEach(a=>(a.topics||[]).forEach(t=>{(st[t]=st[t]||{n:0,g:0});st[t].n++;if(a.sentiment==='부정')st[t].g++}));
+  const rows=Object.entries(st).map(([t,v])=>[t,v.n?100*v.g/v.n:0,v.n]).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('tpSub').textContent='기간 내 다중 분류 기준';
+  chTp=hbar(chTopic,chTp,rows.map(r=>r[0]),rows.map(r=>r[1]),
+    rows.map(r=>r[1]>=8?C.red:r[1]>=4?C.mid:'#6B7A8F'),'%');
+}
+function drawSido(){
+  const src=ALL.filter(a=>a.sido&&(period==='month'?a.date.slice(0,7)===ALL.map(x=>x.date).sort().pop().slice(0,7):true));
+  const st={};src.forEach(a=>{(st[a.sido]=st[a.sido]||{n:0,g:0});st[a.sido].n++;if(a.sentiment==='부정')st[a.sido].g++});
+  const rows=Object.entries(st).filter(([,v])=>v.n>=20).map(([s,v])=>[s,100*v.g/v.n]).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  if(rows.length){chSd=hbar(chSido,chSd,rows.map(r=>r[0]),rows.map(r=>r[1]),
+    rows.map(r=>r[1]>=8?C.red:r[1]>=4?C.mid:C.navy),'%');}
+}
+function drawWatch(R){
+  const cnt={};R.filter(a=>a.sentiment==='부정').forEach(a=>tokens(a.title).forEach(w=>cnt[w]=(cnt[w]||0)+1));
+  const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const w=document.getElementById('watch');
+  w.innerHTML=top.length?top.map(([k,c])=>`<button data-k="${k}" ${kw===k?'class="on"':''}>${k}<i>${c}</i></button>`).join('')
+    :'<span class="empty" style="padding:6px">기간 내 부정 보도 없음</span>';
+  w.querySelectorAll('button').forEach(b=>b.onclick=()=>{kw=(kw===b.dataset.k?'':b.dataset.k);shown=50;render()});
+}
+function drawList(){
+  const q=document.getElementById('q').value.trim();
+  let L=ALL.filter(inScope);
+  if(sent!=='all')L=L.filter(a=>a.sentiment===sent);
+  if(kw)L=L.filter(a=>a.title.includes(kw));
+  if(q)L=L.filter(a=>a.title.includes(q));
+  document.getElementById('nsSub').textContent=`${fmt(L.length)}건`+(kw?` · 쟁점 "${kw}"`:'')+(q?` · 검색 "${q}"`:'');
+  const bd=s=>s==='긍정'?'b-pos':s==='부정'?'b-neg':'b-neu';
+  document.getElementById('list').innerHTML=L.slice(0,shown).map(a=>
+   `<li><span class="d num">${a.date.slice(5)}</span><span class="badge ${bd(a.sentiment)}">${a.sentiment}</span>`+
+   `<a href="${a.url}" target="_blank" rel="noopener">${a.title}</a>`+
+   `<span class="tag">${a.sido||'중앙'}·${(a.topics||[])[0]||''}</span></li>`).join('')||'<li class="empty">해당 없음</li>';
+  document.getElementById('more').style.display=L.length>shown?'block':'none';
+}
+function drawReports(){
+  fetch('https://api.github.com/repos/baebong3/bizpolicy/contents/reports').then(r=>r.json()).then(fs=>{
+    const hs=(fs||[]).filter(f=>f.name&&f.name.endsWith('.html')).sort((a,b)=>b.name.localeCompare(a.name));
+    if(hs.length)document.getElementById('reps').innerHTML=hs.map(f=>`<li><a href="reports/${f.name}">${f.name.replace('.html','')}</a></li>`).join('');
+  }).catch(()=>{});
+}
+
+document.querySelectorAll('#periodNav [data-p]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#periodNav [data-p]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');period=b.dataset.p;shown=50;render()});
+document.querySelectorAll('#periodNav .sc').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#periodNav .sc').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');scope=b.dataset.s;shown=50;render()});
+document.querySelectorAll('.flt [data-f]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.flt [data-f]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');sent=b.dataset.f;shown=50;drawList()});
+document.getElementById('q').addEventListener('input',()=>{shown=50;drawList()});
+document.getElementById('more').onclick=()=>{shown+=50;drawList()};
+</script>
 </body></html>
