@@ -27,8 +27,17 @@ h1{font-size:23px;margin-top:4px}
 .kpi .l{font-size:11px;color:var(--mut);font-weight:600}
 .kpi .v{font-size:23px;font-weight:800;margin:2px 0;color:var(--navy)}
 .kpi .s{font-size:11px;color:var(--mut)}
-.sum{background:#fff;border:1.5px solid var(--navy);border-left:6px solid var(--lime);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;line-height:1.7}
-.sum b{color:var(--navy)}
+.hero{background:#fff;border:1.5px solid var(--navy);border-left:6px solid var(--lime);border-radius:10px;padding:13px 17px;margin-bottom:14px}
+.hero .ht{font-size:14px;color:var(--navy);font-weight:800;margin-bottom:7px}
+.hero .ht::before{content:'★ ';color:var(--lime)}
+.hero .ht i{font-style:normal;font-size:11.5px;color:var(--mut);font-weight:600;margin-left:6px}
+.hero li{list-style:none;font-size:13px;line-height:1.6;padding:4px 0 4px 15px;position:relative;border-bottom:1px dashed var(--grid)}
+.hero li:last-child{border-bottom:none}
+.hero li::before{content:'ㅇ';position:absolute;left:0;top:6px;color:var(--mid);font-size:10.5px}
+.hero b{color:var(--navy)}
+.hero .neg{color:var(--red);font-weight:700}
+.hero .rep{display:block;font-size:11px;color:var(--mut);margin-top:1px}
+.hero .hn{font-size:10px;color:var(--mut);margin-top:7px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .card{background:#fff;border:1px solid #E3E7EE;border-radius:10px;padding:13px 15px}
 .card.full{grid-column:1/-1}
@@ -81,6 +90,9 @@ footer{margin-top:24px;border-top:1px solid #E3E7EE;padding-top:10px;font-size:1
     <button data-s="지자체" class="sc">지자체</button>
   </div>
 
+  <div class="hero"><div class="ht">핵심 이슈 브리프<i id="hp"></i></div><ul id="hero"><li>데이터를 불러오는 중…</li></ul>
+  <div class="hn">※ 기간 내 기사 제목 핵심어의 공출현 군집으로 자동 도출 — 노출도=관련 기사 수(기간 전체 대비 점유율) · 인물·정당명 제외</div></div>
+
   <div class="kpis">
     <div class="kpi"><div class="l" id="k1l">수집</div><div class="v num" id="k1">-</div><div class="s" id="k1s"></div></div>
     <div class="kpi lm"><div class="l">긍정</div><div class="v num" id="k2">-</div><div class="s" id="k2s"></div></div>
@@ -88,8 +100,6 @@ footer{margin-top:24px;border-top:1px solid #E3E7EE;padding-top:10px;font-size:1
     <div class="kpi"><div class="l">순감성지수(NSI)</div><div class="v num" id="k4">-</div><div class="s">(긍정−부정)÷전체×100</div></div>
     <div class="kpi lm"><div class="l">최다 주제</div><div class="v" id="k5" style="font-size:17px">-</div><div class="s" id="k5s"></div></div>
   </div>
-
-  <div class="sum" id="sum">데이터를 불러오는 중…</div>
 
   <div class="grid">
     <div class="card full"><div class="eyebrow">TREND</div>
@@ -147,7 +157,7 @@ fetch('biz_news.json?'+Date.now())
   document.getElementById('upd').textContent=(d.meta?.generated||'-').slice(0,16).replace('T',' ');
   document.getElementById('tot').textContent=fmt(ALL.length);
   render();
- },()=>{document.getElementById('sum').textContent='biz_news.json을 불러오지 못했습니다 — 첫 수집(Actions) 실행 후 표시됩니다.'});
+ },()=>{document.getElementById('hero').innerHTML='<li>biz_news.json을 불러오지 못했습니다 — 첫 수집(Actions) 실행 후 표시됩니다</li>'});
 const tryDraw=(fn,id)=>{try{if(typeof Chart==='undefined')throw 0;fn()}catch(e){
   const c=document.getElementById(id); if(c&&c.parentElement)
   c.parentElement.innerHTML='<div class="empty">차트 라이브러리 로드 실패 — 새로고침하거나 잠시 후 다시 시도하세요</div>'}};
@@ -185,17 +195,50 @@ function render(){
   const top=Object.entries(tc).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('k5').textContent=top?top[0]:'-';
   document.getElementById('k5s').textContent=top?fmt(top[1])+'건':'';
-  // 요약
-  const neg=R.filter(a=>a.sentiment==='부정');
-  const nt={};neg.forEach(a=>(a.topics||[]).forEach(t=>nt[t]=(nt[t]||0)+1));
-  const hot=Object.entries(nt).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('sum').innerHTML=
-    `◈ ${lbl} <b class="num">${fmt(G.n)}</b>건 — 순감성지수 <b class="num">${f1(G.nsi)}</b>, 부정 <b class="num">${fmt(G.neg)}</b>건(${f1(G.n?100*G.neg/G.n:0)}%). `+
-    (hot?`부정 보도가 가장 몰린 주제는 <b>${hot[0]}</b>(${hot[1]}건)입니다.`:'부정 보도 집중 주제가 없습니다.');
+  drawHero(R,G,lbl);
   tryDraw(drawTrend,'chTrend');tryDraw(()=>drawTopic(R),'chTopic');tryDraw(drawSido,'chSido');
   drawWatch(R);drawList();drawReports();
 }
 
+function detectIssues(R,top){
+  const map={};
+  R.forEach((a,i)=>tokens(a.title).forEach(w=>(map[w]=map[w]||new Set()).add(i)));
+  const ranked=Object.entries(map).sort((x,y)=>y[1].size-x[1].size).slice(0,12);
+  const cl=[];
+  for(const [w,ids] of ranked){
+    let hit=null;
+    for(const c of cl){
+      let inter=0; ids.forEach(i=>{if(c.ids.has(i))inter++});
+      if(inter&&inter/Math.min(c.ids.size,ids.size)>=0.35){hit=c;break}
+    }
+    if(hit){hit.kws.push(w);ids.forEach(i=>hit.ids.add(i))}
+    else cl.push({kws:[w],ids:new Set(ids)});
+  }
+  cl.sort((x,y)=>y.ids.size-x.ids.size);
+  return cl.slice(0,top).map(c=>{
+    const arts=[...c.ids].map(i=>R[i]);
+    const n=arts.length,g=arts.filter(a=>a.sentiment==='부정').length;
+    const seg={};arts.forEach(a=>{const k=a.sido||(a.topics||[])[0];if(k)seg[k]=(seg[k]||0)+1});
+    const sTop=Object.entries(seg).sort((x,y)=>y[1]-x[1])[0];
+    const negA=arts.filter(a=>a.sentiment==='부정').sort((x,y)=>y.date.localeCompare(x.date));
+    const rep=(negA[0]||arts.slice().sort((x,y)=>y.date.localeCompare(x.date))[0]||{}).title||'';
+    return {name:c.kws.slice(0,2).join('·'),n,g,seg:sTop?sTop[0]:'-',rep};
+  });
+}
+function drawHero(R,G,lbl){
+  document.getElementById('hp').textContent=` — ${lbl}${scope==='전체'?'':' · '+scope}`;
+  const h=document.getElementById('hero');
+  if(!R.length){h.innerHTML='<li>기간 내 수집 기사가 없습니다</li>';return}
+  const rows=[`<li>지표 — 수집 <b class="num">${fmt(G.n)}</b>건 · 순감성지수 <b class="num">${f1(G.nsi)}</b> · 부정 <span class="neg num">${fmt(G.neg)}건(${f1(G.n?100*G.neg/G.n:0)}%)</span></li>`];
+  const circ=['①','②','③','④'];
+  detectIssues(R,4).forEach((it,i)=>{
+    rows.push(`<li>${circ[i]} <b>${it.name}</b> — 노출 <b class="num">${fmt(it.n)}</b>건(${f1(100*it.n/G.n)}%)`+
+      (it.g?` · 부정 <span class="neg num">${fmt(it.g)}건(${f1(100*it.g/it.n)}%)</span>`:' · 부정 0건')+
+      ` · ${it.seg} 중심`+
+      (it.rep?`<span class="rep">“${it.rep.slice(0,46)}${it.rep.length>46?'…':''}”</span>`:'')+`</li>`);
+  });
+  h.innerHTML=rows.join('');
+}
 function drawTrend(){
   const src=ALL.filter(inScope);
   let buckets={};
